@@ -43,6 +43,7 @@ const theme = createTheme({
 
 const Modalform = ({ open, handleClose }) => {
   const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
   const [searchValue, setSearchValue] = useState('');
   const [abhaAddress, setAbhaAddress] = useState(null);
   const [purposeOfRequest, setPurposeOfRequest] = useState('');
@@ -62,13 +63,11 @@ const new_uuid = uuidv4();
 const timestamp = DateTime.utc().toISO();
 
 
-
   const { data: sessionData} = useGetSessionTokenQuery();
 
   const { data: fetchData, error: fetchError, isLoading: fetchLoading } = useGetDataQuery({ accessToken: sessionData?.accessToken, abhaAddress }, { skip: !abhaAddress });
 
   const [consentRequest, response] = useConsentRequestMutation();
-
 
   // const { data: consentData, error: consentError, isLoading: consentLoading } = useConsentRequestMutation({ accessToken: sessionData?.accessToken });
 
@@ -90,30 +89,21 @@ const timestamp = DateTime.utc().toISO();
           "timestamp": timestamp,
           "consent": {
               "purpose": {
-                  "text": "string",
+                  "text": purposeOfRequest,
                   "code": "string",
                   "refUri": "string"
               },
               "patient": {
                   "id": abhaAddress
               },
-              "hip": {
-                  "id": "string"
-              },
-              "careContexts": [
-                  {
-                      "patientReference": "batman@tmh",
-                      "careContextReference": "Episode1"
-                  }
-              ],
               "hiu": {
-                  "id": "string"
+                  "id": "sumasoft_demo_hiu" 
               },
               "requester": {
                   "name": fetchData?.name,
                   "identifier": {
                       "type": "REGNO",
-                      "value": purposeOfRequest,
+                      "value": "purposeOfRequest",
                       "system": "https://www.mciindia.org"
                   }
               },
@@ -121,7 +111,7 @@ const timestamp = DateTime.utc().toISO();
               "permission": {
                   "accessMode": "VIEW",
                   "dateRange": {
-                      "from": purposeOfRequest,
+                      "from": startDate.toISOString(),
                       "to": startDate.toISOString()
                   },
                   "dataEraseAt":  consentExpiry.toISOString(),
@@ -144,21 +134,18 @@ const timestamp = DateTime.utc().toISO();
         // consentExpiry: consentExpiry.toISOString(), 
       };
 
-      console.log("*********", requestBody)
+      // console.log("*********", requestBody)
 
       consentRequest({accessToken: sessionData?.accessToken, requestBody})
   
       // Make API call to request consent
       // await consentMutation.mutateAsync({ accessToken: sessionData?.accessToken, requestBody });
 
-      // Close the modal after successful request
       handleClose();
     } catch (error) {
       console.error("Error requesting consent:", error);
-      // Handle error if the API call fails
     }
   };
-
 
 
   const handleCheckboxChange = (event) => {
@@ -173,12 +160,27 @@ const timestamp = DateTime.utc().toISO();
     setStartDate(date);
   };
 
+  const handleStartDateChange = (date) => {
+    setStartDate(date);
+  };
+  
+  // Handler for updating the end date
+  const handleEndDateChange = (date) => {
+    setEndDate(date);
+  };
+
+  
   const style = {
     width: "95%",
     height: "95%",
     bgcolor: "background.paper",
     borderRadius: "10px",
-    boxShadow: 24,
+    boxShadow: 24, 
+
+
+
+
+    
   };
 
   const getInputStyles = (focusColor, selectedColor) => ({
@@ -193,7 +195,6 @@ const timestamp = DateTime.utc().toISO();
   });
 
  
-
   return (
     <Modal
       open={open}
@@ -296,7 +297,6 @@ const timestamp = DateTime.utc().toISO();
                 </Grid>
               )}
             </Grid>
-
             <Grid container alignItems="center" spacing={1}>
               <Grid item xs={3.5}>
                 <Typography
@@ -327,7 +327,6 @@ const timestamp = DateTime.utc().toISO();
               </Grid>
 
             <Box mt={3.4} />
-
             <Grid container alignItems="center" spacing={1}>
               <Grid item xs={3.5}>
                 <Typography
@@ -376,8 +375,8 @@ const timestamp = DateTime.utc().toISO();
                 <FormControl variant="standard" fullWidth>
                   <DatePicker
                     selected={startDate}
-                    onChange={handleDateChange}
-                    maxDate={new Date()}
+                    onChange={handleStartDateChange}
+                    maxDate={endDate}
                     dateFormat="dd/MM/yyyy"
                     customInput={
                       <TextField
@@ -415,8 +414,9 @@ const timestamp = DateTime.utc().toISO();
               <Grid item xs={4}>
                 <FormControl variant="standard" fullWidth>
                   <DatePicker
-                    selected={startDate}
-                    onChange={handleDateChange}
+                    selected={endDate}
+                    onChange={handleEndDateChange}
+                    minDate={startDate} // Set minDate to the startDate
                     maxDate={new Date()}
                     dateFormat="dd/MM/yyyy"
                     customInput={
