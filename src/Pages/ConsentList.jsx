@@ -11,6 +11,8 @@ import Loader from "../Components/Loader";
 import Modalform from "../Components/Modalform";
 
 const ConsentList = () => {
+
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showLoader, setShowLoader] = useState(false);

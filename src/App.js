@@ -13,36 +13,24 @@ import Publicroutes from "./Components/auth/Publicroutes.jsx";
 function App() {
   return (
     <div className="App">
-      <Router>
-        {/* <Navbar /> */}
+       <Router>
+        
         <Routes>
-          <Route element={<Publicroutes />}>
-          <Route path="/login" element={<Login />} />
-          </Route> 
-
+          
           <Route element={<Protectedroutes />}>
             <Route path="/" element={<ConsentList />} />
           </Route>
 
+          <Route element={<Publicroutes />}>
+          <Route path="/login" element={<Login />} />
+          </Route> 
+
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
-      </Router>
+      </Router> 
     </div>
   );
 }
 
 export default App;
 
-
-// import React from "react";
-// import DummyData from "./Pages/DummyData.jsx";
-
-// function App() {
-//   return (
-//     <div className="App">
-//      <DummyData />
-//     </div>
-//   );
-// }
-
-// export default App;

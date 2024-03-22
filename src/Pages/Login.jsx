@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   TextField,
@@ -13,9 +13,11 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import "../index.css";
 import { useNavigate } from "react-router-dom";
 import Loader from "../Components/Loader";
+import { useLoginUserMutation } from "../store/slice/Login.slice";
 
 function CustomTextField({ label, onChange, ...props }) {
   return (
+    
     <TextField
       label={label}
       fullWidth
@@ -44,53 +46,41 @@ function CustomTextField({ label, onChange, ...props }) {
 }
 
 const Homepage = () => {
+  const [loginUser, { isLoading }] = useLoginUserMutation();
+
   const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  // const [authenticated, setAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(false); // State to control loader visibility
+  const [loading, setLoading] = useState(false); 
+  const [error, setError] = useState();
 
+  
   const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const result = await loginUser({ UserName: username, Password: password }).unwrap();
+      // console.log('Login successful:', result);
+
+      localStorage.setItem("accessToken", result.token);
+      navigate('/')
+
+    } catch (error) {
+      // console.error('Login failed:', error);
+    } finally {
+      setTimeout(() => {
+        setLoading(false); 
+        setError("Invalid username or password");
+      }, 1000); 
+   }
+  };
 
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true); // Show loader before login process
-
-    const users = [{ username: "SBX_000602_HIU", password: "67wH#c*bp" }];
-
-    localStorage.setItem("accessToken", users[0]);
-    const account = users.find((user) => user.username === username);
-    if (account && account.password === password) {
-      localStorage.setItem("accessToken", true);
-      // setAuthenticated(true);
-
-      setTimeout(() => {
-        navigate("/");
-        setLoading(false);
-      }, 2000);
-      // navigate("/");
-    } else {
-      alert("Invalid username or password");
-      setLoading(false); // Hide loader after login process
-    }
-  };
-
-  // useEffect(() => {
-  //   const loggedInUser = localStorage.getItem("authenticated");
-  //   if (loggedInUser) {
-  //     setAuthenticated(true);
-  //   } else {
-  //     navigate("/login");
-  //   }
-  // }, [navigate]);
-
-  // if (!authenticated) {
-  //   return null;
-  // }
 
   return (
     <div>
@@ -99,7 +89,7 @@ const Homepage = () => {
       <Typography variant="h5" align="center" style={{ marginTop: "78px" }}>
         For access please send an email to&nbsp;
         <span style={{ color: "black", fontWeight: "bold" }}>
-          firoz.shaikh@sumasoft.net&nbsp;
+          firoj.shaikh@sumasoft.net&nbsp;
         </span>
         with your registered <br></br>client id
       </Typography>
@@ -168,9 +158,10 @@ const Homepage = () => {
                 variant="contained"
                 sx={{ bgcolor: "#009688" }}
                 style={{ backgroundColor: "#009688" }}
-              >
+                disabled={isLoading}              >
                 Sign In
               </Button>
+              {error && <div style={{ color: "red", textAlign: "center", marginTop:'15px' }}>{error}</div>} 
             </Grid>
           </Grid>
         </form>

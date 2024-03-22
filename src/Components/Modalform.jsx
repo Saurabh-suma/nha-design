@@ -22,7 +22,9 @@ import TodayIcon from "@mui/icons-material/Today";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { Button } from "@mui/material";
-import { useGetSessionTokenQuery, useGetDataQuery } from "../store/slice/Consent.slice";
+import { v4 as uuidv4 } from 'uuid'; 
+import { DateTime } from 'luxon';
+import { useGetSessionTokenQuery, useGetDataQuery, useConsentRequestMutation } from "../store/slice/Patient.slice";
 
 const theme = createTheme({
   components: {
@@ -40,16 +42,12 @@ const theme = createTheme({
 });
 
 const Modalform = ({ open, handleClose }) => {
-
-  const { data: sessionData, error: sessionError, isLoading: sessionLoading } = useGetSessionTokenQuery();
-
-  // Call the useGetDataQuery hook only once when component mounts
-  const { data: fetchData, error: fetchError, isLoading: fetchLoading } = useGetDataQuery({ accessToken: sessionData?.accessToken }, { skip: sessionLoading });
-
-  // console.log("888888888888888", fetchData)
-  // console.log("7777777777777",sessionData)
-
   const [startDate, setStartDate] = useState(new Date());
+  const [searchValue, setSearchValue] = useState('');
+  const [abhaAddress, setAbhaAddress] = useState(null);
+  const [purposeOfRequest, setPurposeOfRequest] = useState('');
+  const [consentExpiry, setConsentExpiry] = useState(new Date());
+  const [errors, setErrors] = useState([]);
   const [checked, setChecked] = useState({
     opConsultation: false,
     diagnosticReports: false,
@@ -59,6 +57,109 @@ const Modalform = ({ open, handleClose }) => {
     healthDocumentRecord: false,
     wellnessRecord: false,
   });
+
+const new_uuid = uuidv4();
+const timestamp = DateTime.utc().toISO();
+
+
+
+  const { data: sessionData} = useGetSessionTokenQuery();
+
+  const { data: fetchData, error: fetchError, isLoading: fetchLoading } = useGetDataQuery({ accessToken: sessionData?.accessToken, abhaAddress }, { skip: !abhaAddress });
+
+  const [consentRequest, response] = useConsentRequestMutation();
+
+
+  // const { data: consentData, error: consentError, isLoading: consentLoading } = useConsentRequestMutation({ accessToken: sessionData?.accessToken });
+
+  
+  const handleSearchClick = async () => {
+    const abhaAddressFromSearch = searchValue; 
+    setAbhaAddress(abhaAddressFromSearch);
+    setErrors(fetchError?.data ? JSON.stringify(fetchError.data) : '');
+    setTimeout(() => {
+      setErrors(''); 
+   }, 4000); 
+  };
+
+  const handleRequestConsent = () => {
+    try {
+      const requestBody = {
+        
+          "requestId": new_uuid,
+          "timestamp": timestamp,
+          "consent": {
+              "purpose": {
+                  "text": "string",
+                  "code": "string",
+                  "refUri": "string"
+              },
+              "patient": {
+                  "id": abhaAddress
+              },
+              "hip": {
+                  "id": "string"
+              },
+              "careContexts": [
+                  {
+                      "patientReference": "batman@tmh",
+                      "careContextReference": "Episode1"
+                  }
+              ],
+              "hiu": {
+                  "id": "string"
+              },
+              "requester": {
+                  "name": fetchData?.name,
+                  "identifier": {
+                      "type": "REGNO",
+                      "value": purposeOfRequest,
+                      "system": "https://www.mciindia.org"
+                  }
+              },
+              "hiTypes": checked,
+              "permission": {
+                  "accessMode": "VIEW",
+                  "dateRange": {
+                      "from": purposeOfRequest,
+                      "to": startDate.toISOString()
+                  },
+                  "dataEraseAt":  consentExpiry.toISOString(),
+                  "frequency": {
+                      "unit": "HOUR",
+                      "value": 0,
+                      "repeats": 0
+                  }
+              }
+          }
+      
+        // requestId: new_uuid,
+        // timestamp: timestamp,   
+        // patientIdentifier: searchValue,
+        // abhaAddress: abhaAddress,
+        // purposeOfRequest: purposeOfRequest,
+        // healthInfoFrom: startDate.toISOString(), 
+        // healthInfoTo: startDate.toISOString(), 
+        // healthInfoType: Object.entries(checked).filter(([key, value]) => value).map(([key]) => key),
+        // consentExpiry: consentExpiry.toISOString(), 
+      };
+
+      console.log("*********", requestBody)
+
+      consentRequest({accessToken: sessionData?.accessToken, requestBody})
+  
+      // Make API call to request consent
+      // await consentMutation.mutateAsync({ accessToken: sessionData?.accessToken, requestBody });
+
+      // Close the modal after successful request
+      handleClose();
+    } catch (error) {
+      console.error("Error requesting consent:", error);
+      // Handle error if the API call fails
+    }
+  };
+
+
 
   const handleCheckboxChange = (event) => {
     const { name, checked: isChecked } = event.target;
@@ -90,6 +191,8 @@ const Modalform = ({ open, handleClose }) => {
       },
     },
   });
+
+ 
 
   return (
     <Modal
@@ -162,19 +265,22 @@ const Modalform = ({ open, handleClose }) => {
                     margin="normal"
                     size="small"
                     sx={{ width: "14.70rem" }}
-                    variant="standard"
+                    variant="standard"      
+                    // error={errors.length > 0} 
+                    // helperText={errors}
+                    onChange={(e) => setSearchValue(e.target.value)} 
                     InputProps={{
                       ...getInputStyles("black", "#009688"),
                       endAdornment: (
-                        <InputAdornment position="end">
+                        <InputAdornment position="end" >
                           <Typography
                             variant="body1"
                             sx={{ marginRight: "-10px" }}
                           >
                             @sbx
                           </Typography>
-                          <IconButton>
-                            <ArrowDropDownIcon />
+                          <IconButton >
+                            <ArrowDropDownIcon  />
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -182,15 +288,43 @@ const Modalform = ({ open, handleClose }) => {
                   />
                 </FormControl>
               </Grid>
-              <Grid item>
-                <IconButton sx={{ ml: "-85px" }}>
-                  <SearchOutlinedIcon
-                    className="icon-search icon-modal"
-                    fontSize="medium"
-                  />
-                </IconButton>
-              </Grid>
+              {searchValue && ( // Step 4: Conditionally render search icon
+                <Grid item>
+                  <IconButton sx={{ ml: "-85px" }} onClick={handleSearchClick}>
+                    <SearchOutlinedIcon className="icon-search" fontSize="medium" />
+                  </IconButton>
+                </Grid>
+              )}
             </Grid>
+
+            <Grid container alignItems="center" spacing={1}>
+              <Grid item xs={3.5}>
+                <Typography
+                  variant="body1"
+                  sx={{ fontFamily: "Roboto, sans-serif" }}
+                >
+                  ABHA Address Name
+                </Typography>
+              </Grid>
+              <Grid item xs={4}>
+                <FormControl variant="standard" fullWidth>
+                  <TextField
+                    id="input-with-icon-adornment1"
+                    margin="normal"
+                    size="small"
+                    error={fetchError} 
+                    value={fetchError ? "AbhaAddress is Not Found" : fetchData?.name} 
+                    sx={{ width: "14.70rem" }}
+                    variant="standard"       
+                    InputProps={{
+                      style: {
+                          color: fetchError ? "red" : "black",
+                      }
+                  }}
+                  />
+                </FormControl>
+              </Grid>
+              </Grid>
 
             <Box mt={3.4} />
 
@@ -203,7 +337,7 @@ const Modalform = ({ open, handleClose }) => {
                   Purpose of request
                 </Typography>
               </Grid>
-              <Grid item xs={4}>
+              <Grid item xs={4.5}>
                 <FormControl variant="standard" fullWidth>
                   <Select
                     labelId="demo-simple-select-label"
@@ -217,9 +351,11 @@ const Modalform = ({ open, handleClose }) => {
                       </InputAdornment>
                     }
                   >
-                    <MenuItem value={10}>Option 1</MenuItem>
-                    <MenuItem value={20}>Option 2</MenuItem>
-                    <MenuItem value={30}>Option 3</MenuItem>
+                    <MenuItem value={10}>Care Management</MenuItem>
+                    <MenuItem value={20}>Break the Glass</MenuItem>
+                    <MenuItem value={30}>Public Health</MenuItem>
+                    <MenuItem value={40}>Disease Specific Healthcare Research</MenuItem>
+                    <MenuItem value={50}>Self Requested</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -470,6 +606,7 @@ const Modalform = ({ open, handleClose }) => {
                 margin: "auto", 
                 display: "block", 
               }}
+              onClick={handleRequestConsent}
             >
               REQUEST CONSENT
             </Button>
