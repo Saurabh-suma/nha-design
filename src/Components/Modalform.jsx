@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   Grid,
@@ -49,6 +49,7 @@ const Modalform = ({ open, handleClose }) => {
   const [purposeOfRequest, setPurposeOfRequest] = useState('');
   const [consentExpiry, setConsentExpiry] = useState(new Date());
   const [errors, setErrors] = useState([]);
+  const [isValid, setIsValid] = useState(false);
   const [checked, setChecked] = useState({
     opConsultation: false,
     diagnosticReports: false,
@@ -83,13 +84,14 @@ const timestamp = DateTime.utc().toISO();
 
   const handleRequestConsent = () => {
     try {
+      if (!fetchError && fetchData && fetchData.name) {
+
       const requestBody = {
-        
           "requestId": new_uuid,
           "timestamp": timestamp,
           "consent": {
               "purpose": {
-                  "text": purposeOfRequest,
+                  "Purposeofrequest": purposeOfRequest, 
                   "code": "string",
                   "refUri": "string"
               },
@@ -107,12 +109,12 @@ const timestamp = DateTime.utc().toISO();
                       "system": "https://www.mciindia.org"
                   }
               },
-              "hiTypes": checked,
+              "hiTypes": Object.keys(checked).filter(key => checked[key]),
               "permission": {
                   "accessMode": "VIEW",
                   "dateRange": {
                       "from": startDate.toISOString(),
-                      "to": startDate.toISOString()
+                      "to": endDate.toISOString()
                   },
                   "dataEraseAt":  consentExpiry.toISOString(),
                   "frequency": {
@@ -141,12 +143,13 @@ const timestamp = DateTime.utc().toISO();
       // Make API call to request consent
       // await consentMutation.mutateAsync({ accessToken: sessionData?.accessToken, requestBody });
 
-      handleClose();
-    } catch (error) {
-      console.error("Error requesting consent:", error);
+    } else {
+      // console.error("Error: ABHA Address name not fetched properly");
     }
-  };
-
+  } catch (error) {
+    // console.error("Error requesting consent:", error);
+  }
+};
 
   const handleCheckboxChange = (event) => {
     const { name, checked: isChecked } = event.target;
@@ -164,10 +167,11 @@ const timestamp = DateTime.utc().toISO();
     setStartDate(date);
   };
   
-  // Handler for updating the end date
   const handleEndDateChange = (date) => {
     setEndDate(date);
   };
+
+
 
   
   const style = {
@@ -176,11 +180,6 @@ const timestamp = DateTime.utc().toISO();
     bgcolor: "background.paper",
     borderRadius: "10px",
     boxShadow: 24, 
-
-
-
-
-    
   };
 
   const getInputStyles = (focusColor, selectedColor) => ({
@@ -193,6 +192,14 @@ const timestamp = DateTime.utc().toISO();
       },
     },
   });
+
+
+  useEffect(() => {
+    // Check if all mandatory fields are filled
+    const mandatoryFields = [searchValue, purposeOfRequest];
+    const isValidForm = mandatoryFields.every(field => !!field);
+    setIsValid(isValidForm);
+  }, [searchValue, purposeOfRequest]);
 
  
   return (
@@ -344,17 +351,18 @@ const timestamp = DateTime.utc().toISO();
                     size="small"
                     variant="standard"
                     InputProps={getInputStyles("black", "#009688")}
+                    onChange={(e) => setPurposeOfRequest(e.target.value)} 
                     endAdornment={
                       <InputAdornment position="end">
                         <ArrowDropDownIcon />
                       </InputAdornment>
                     }
                   >
-                    <MenuItem value={10}>Care Management</MenuItem>
-                    <MenuItem value={20}>Break the Glass</MenuItem>
-                    <MenuItem value={30}>Public Health</MenuItem>
-                    <MenuItem value={40}>Disease Specific Healthcare Research</MenuItem>
-                    <MenuItem value={50}>Self Requested</MenuItem>
+                    <MenuItem value="Care Management">Care Management</MenuItem>
+                    <MenuItem value="Break the Glass">Break the Glass</MenuItem>
+                    <MenuItem value="Public Health">Public Health</MenuItem>
+                    <MenuItem value="Disease Specific Healthcare Research">Disease Specific Healthcare Research</MenuItem>
+                    <MenuItem value="Self Requested">Self Requested</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -606,6 +614,7 @@ const timestamp = DateTime.utc().toISO();
                 margin: "auto", 
                 display: "block", 
               }}
+              disabled={!isValid}
               onClick={handleRequestConsent}
             >
               REQUEST CONSENT

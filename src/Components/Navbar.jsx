@@ -1,4 +1,4 @@
-import React , {useEffect} from "react";
+import React from "react";
 import { AppBar, Toolbar, Typography, Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +28,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("username");
     navigate("/login");
   };
 

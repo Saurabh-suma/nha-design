@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Button,
   TextField,
@@ -17,7 +17,6 @@ import { useLoginUserMutation } from "../store/slice/Login.slice";
 
 function CustomTextField({ label, onChange, ...props }) {
   return (
-    
     <TextField
       label={label}
       fullWidth
@@ -65,10 +64,10 @@ const Homepage = () => {
       // console.log('Login successful:', result);
 
       localStorage.setItem("accessToken", result.token);
+      localStorage.setItem("username", result.username);
       navigate('/')
 
     } catch (error) {
-      // console.error('Login failed:', error);
     } finally {
       setTimeout(() => {
         setLoading(false); 
