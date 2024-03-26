@@ -34,12 +34,13 @@ const Patient = createApi({
   }),
 
   consentRequest: builder.mutation({
-    query: ({ accessToken, requestBody }) => ({
+    query: ({ accessToken,userToken, requestBody }) => ({
       url: '/mock-hiu/consent/request',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
+        Logintoken : `Bearer ${userToken}`
       },
       body: requestBody,
     }),

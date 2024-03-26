@@ -60,6 +60,8 @@ const Modalform = ({ open, handleClose }) => {
     wellnessRecord: false,
   });
 
+  const [userToken , setUserToken] = useState('')
+
 const new_uuid = uuidv4();
 const timestamp = DateTime.utc().toISO();
 
@@ -81,6 +83,13 @@ const timestamp = DateTime.utc().toISO();
       setErrors(''); 
    }, 4000); 
   };
+
+  useEffect(() => {
+    const storedAccessToken = localStorage.getItem('accessToken');
+    if (storedAccessToken) {
+      setUserToken(storedAccessToken);
+    }
+  }, []);
 
   const handleRequestConsent = () => {
     try {
@@ -136,9 +145,9 @@ const timestamp = DateTime.utc().toISO();
         // consentExpiry: consentExpiry.toISOString(), 
       };
 
-      // console.log("*********", requestBody)
+      console.log("userToken*********111111111", userToken)
 
-      consentRequest({accessToken: sessionData?.accessToken, requestBody})
+      consentRequest({accessToken: sessionData?.accessToken, userToken ,requestBody})
   
       // Make API call to request consent
       // await consentMutation.mutateAsync({ accessToken: sessionData?.accessToken, requestBody });
