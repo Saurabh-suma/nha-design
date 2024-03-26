@@ -36,9 +36,8 @@ export const Login = createApi({
         body: credentials,
       }),
       onSuccess: (response, credentials, api) => {
-        const { token, username } = response; 
+        const { token } = response; 
         localStorage.setItem('token', token);
-        localStorage.setItem('username', username);
       },
     }),
   }),

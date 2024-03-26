@@ -64,7 +64,6 @@ const Homepage = () => {
       // console.log('Login successful:', result);
 
       localStorage.setItem("accessToken", result.token);
-      localStorage.setItem("username", result.username);
       navigate('/')
 
     } catch (error) {
