@@ -25,6 +25,7 @@ import { Button } from "@mui/material";
 import { v4 as uuidv4 } from 'uuid'; 
 import { DateTime } from 'luxon';
 import { useGetSessionTokenQuery, useGetDataQuery, useConsentRequestMutation } from "../store/slice/Patient.slice";
+import Loader from "./Loader";
 
 const theme = createTheme({
   components: {
@@ -46,6 +47,7 @@ const Modalform = ({ open, handleClose }) => {
   const [endDate, setEndDate] = useState(new Date());
   const [searchValue, setSearchValue] = useState('');
   const [abhaAddress, setAbhaAddress] = useState(null);
+  const [showLoader, setShowLoader] = useState(false);
   const [purposeOfRequest, setPurposeOfRequest] = useState('');
   const [consentExpiry, setConsentExpiry] = useState(new Date());
   const [errors, setErrors] = useState([]);
@@ -59,11 +61,12 @@ const Modalform = ({ open, handleClose }) => {
     healthDocumentRecord: false,
     wellnessRecord: false,
   });
+  
 
   const [userToken , setUserToken] = useState('')
 
-const new_uuid = uuidv4();
-const timestamp = DateTime.utc().toISO();
+  const new_uuid = uuidv4();
+  const timestamp = DateTime.utc().toISO();
 
 
   const { data: sessionData} = useGetSessionTokenQuery();
@@ -133,24 +136,12 @@ const timestamp = DateTime.utc().toISO();
                   }
               }
           }
-      
-        // requestId: new_uuid,
-        // timestamp: timestamp,   
-        // patientIdentifier: searchValue,
-        // abhaAddress: abhaAddress,
-        // purposeOfRequest: purposeOfRequest,
-        // healthInfoFrom: startDate.toISOString(), 
-        // healthInfoTo: startDate.toISOString(), 
-        // healthInfoType: Object.entries(checked).filter(([key, value]) => value).map(([key]) => key),
-        // consentExpiry: consentExpiry.toISOString(), 
       };
 
       console.log("userToken*********111111111", userToken)
 
       consentRequest({accessToken: sessionData?.accessToken, userToken ,requestBody})
   
-      // Make API call to request consent
-      // await consentMutation.mutateAsync({ accessToken: sessionData?.accessToken, requestBody });
 
     } else {
       // console.error("Error: ABHA Address name not fetched properly");
@@ -158,6 +149,10 @@ const timestamp = DateTime.utc().toISO();
   } catch (error) {
     // console.error("Error requesting consent:", error);
   }
+  setShowLoader(true); // Show loader before refresh
+  setTimeout(() => {
+    window.location.reload(); // Refresh the page after a delay
+  }, 1000);
 };
 
   const handleCheckboxChange = (event) => {
@@ -179,6 +174,9 @@ const timestamp = DateTime.utc().toISO();
   const handleEndDateChange = (date) => {
     setEndDate(date);
   };
+
+
+  
 
 
 
@@ -624,10 +622,11 @@ const timestamp = DateTime.utc().toISO();
                 display: "block", 
               }}
               disabled={!isValid}
-              onClick={handleRequestConsent}
+              onClick={handleRequestConsent} 
             >
               REQUEST CONSENT
             </Button>
+            <Loader open={showLoader} />
           </div>
         </Grid>
       </Box>

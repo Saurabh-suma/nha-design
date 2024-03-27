@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../Components/Navbar";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
@@ -9,13 +9,18 @@ import { AppBar, Toolbar, InputBase, IconButton } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import Loader from "../Components/Loader";
 import Modalform from "../Components/Modalform";
+import { useGetAllDataQuery } from "../store/slice/Consent.slice";
 
-const ConsentList = () => {
 
-  
+
+const ConsentList = () => {  
   const [searchQuery, setSearchQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
+  const [userToken , setUserToken] = useState('')
+  const [rowData, setRowData] = useState([]);
+
+  const { data: UserData } = useGetAllDataQuery({ userToken });
 
   const handleOpenModal = () => {
     setShowModal(true);
@@ -32,101 +37,54 @@ const ConsentList = () => {
     }, 1000);
   };
 
-  // const handleCloseModal = () => {
-  //   setShowModal(false);
-  // };
 
-  const [rowData] = useState([
-    {
-      name: "Firoz Firoz Shaikh",
-      id: "firozshaikh.f@sbx",
-      status: "Consent Expired",
-      createdAt: "02/02/2023 09:15",
-      grantedOn: "-",
-      expiryOn: "-",
-    },
-    {
-      name: "vijay vijay kharkar",
-      id: "vijay.v@sbx",
-      status: "Consent Expired",
-      createdAt: "02/02/2023 09:15",
-      grantedOn: "-",
-      expiryOn: "-",
-    },
-    {
-      name: "saurabh kumar mahajan",
-      id: "saurabh.s@sbx",
-      status: "Consent Expired",
-      createdAt: "02/02/2023 09:15",
-      grantedOn: "06/12/2020 08:15",
-      expiryOn: "-",
-    },
-    {
-      name: "Kaushal Shivaji Chaudhari",
-      id: "kaushal.k@sbx",
-      status: "Consent Expired",
-      createdAt: "02/02/2023 09:15",
-      grantedOn: "22/05/2021 12:15",
-      expiryOn: "22/09/2022 02:40",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "Rohit rohit shama",
-      id: "rohit.r12345@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    {
-      name: "SUma Soft Aundh",
-      id: "sumasoft.s@sbx",
-      status: "Consent Expired",
-      createdAt: "04/02/2014 09:15",
-      grantedOn: "04/09/2016",
-      expiryOn: "16/08/2018",
-    },
-    // Add more data as needed
-  ]);
+
+  useEffect(() => {
+    const storedAccessToken = localStorage.getItem('accessToken');
+    if (storedAccessToken) {
+      setUserToken(storedAccessToken);
+    }
+  }, []);
+
+  console.log(UserData?.data);
+
+
+  useEffect(() => {
+    const consentRequests = UserData?.data?.consentRequestId;
+    const filteredData = [];
+
+    if (consentRequests) {
+      Object.keys(consentRequests).forEach((requestId) => {
+        const consentData = consentRequests[requestId].consent;
+        filteredData.push({
+          requestId: requestId,
+          name: consentData.requester.name,
+          id: consentData.patient.id,
+          createdAt: new Date(
+            consentRequests[requestId].timestamp
+          ).toLocaleString(),
+          grantedOn: new Date(
+            consentData.permission.dataEraseAt
+          ).toLocaleString(),
+          expiryOn: new Date(
+            consentData.permission.dateRange.to
+          ).toLocaleString(),
+          status: consentRequests[requestId].status
+        });
+      });
+    }
+    setRowData(filteredData);
+  }, [UserData]);
+
+  const handleSearchInputChange = (event) => {
+    const searchValue = event.target.value.toLowerCase();
+    setSearchQuery(searchValue);
+    const filteredRows = rowData.filter((row) =>
+      row.name.toLowerCase().includes(searchValue)
+    );
+    setRowData(filteredRows);
+  };
+
 
   const columnDefs = [
     {
@@ -142,11 +100,6 @@ const ConsentList = () => {
       height: 150,
     },
     {
-      headerName: "Request Status",
-      field: "status",
-      headerClass: "custom-header",
-    },
-    {
       headerName: "Consent Created on",
       field: "createdAt",
       headerClass: "custom-header",
@@ -157,24 +110,22 @@ const ConsentList = () => {
       headerClass: "custom-header",
     },
     {
+      headerName: "Request Status",
+      field: "status",
+      headerClass: "custom-header",
+    },
+  
+    {
       headerName: "Consent Expiry on",
       field: "expiryOn",
       headerClass: "custom-header",
     },
   ];
 
-  const filteredData = rowData.filter((item) => {
-    return item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    // item.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // item.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // item.createdAt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // item.grantedOn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    // item.expiryOn.toLowerCase().includes(searchQuery.toLowerCase())
-  });
 
-  const handleSearchInputChange = (event) => {
-    setSearchQuery(event.target.value);
-  };
+  // const handleSearchInputChange = (event) => {
+  //   setSearchQuery(event.target.value);
+  // };
 
   return (
     <div>
@@ -225,11 +176,11 @@ const ConsentList = () => {
                 <SearchOutlinedIcon className="icon-search" fontSize="medium" />
               </IconButton>
               <InputBase
-                type="search"
-                className="search-input"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={handleSearchInputChange}
+               type="search"
+               className="search-input"
+               placeholder="Search"
+               value={searchQuery}
+               onChange={handleSearchInputChange}
                 style={{ marginLeft: "-1.5rem" }}
               />
               <IconButton onClick={handleRefresh}>
@@ -251,7 +202,7 @@ const ConsentList = () => {
             columnDefs={columnDefs}
             pagination={true}
             paginationPageSize={5}
-            rowData={filteredData}
+            rowData={rowData}
             domLayout="autoHeight"
             rowHeight={55}
             defaultColDef={{
